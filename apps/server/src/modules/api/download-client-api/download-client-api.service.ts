@@ -10,15 +10,15 @@ import {
 
 // qBittorrent rejects an authenticated request with 403 when its Web UI security
 // blocks the caller. Bad credentials are NOT this case (they return HTTP 200
-// "Fails." and are handled at login), so "Invalid API key" (the shared util's
-// 401/403 message) is misleading. The reliable fix is whitelisting Maintainerr's
+// “Fails.” and are handled at login), so “Invalid API key” (the shared util’s
+// 401/403 message) is misleading. The reliable fix is whitelisting Maintainerr’s
 // IP — it and qBittorrent commonly run on different (Docker) IPs — so lead with
 // that and only mention proxy/host validation as a secondary cause.
-const DOWNLOAD_CLIENT_FORBIDDEN_MESSAGE =
+const QBITTORRENT_FORBIDDEN_MESSAGE =
   'The download client accepted the login but returned 403 Forbidden — a ' +
   'qBittorrent Web UI security restriction, not a wrong username or password. ' +
-  'In qBittorrent → Options → Web UI → Security, add Maintainerr’s IP or ' +
-  'subnet to “Bypass authentication for clients in whitelisted IP subnets” ' +
+  'In qBittorrent Options Web UI Security, add Maintainerrs IP or ' +
+  'subnet to Bypass authentication for clients in whitelisted IP subnets ' +
   '(Maintainerr and qBittorrent often run on different Docker IPs). A reverse ' +
   'proxy or host-header validation can also cause this.';
 import {
@@ -63,6 +63,7 @@ export class DownloadClientApiService {
 
     this.api = createDownloadClient(
       {
+        type: this.settings.download_client_type,
         url: this.settings.download_client_url,
         username: this.settings.download_client_username,
         password: this.settings.download_client_password,
@@ -86,7 +87,7 @@ export class DownloadClientApiService {
           status: 'NOK',
           code: 0,
           message:
-            'Unexpected response from the download client. Verify the URL points to a qBittorrent WebUI.',
+            'Unexpected response from the download client. Verify the URL and client type.',
         };
       }
 
@@ -95,14 +96,17 @@ export class DownloadClientApiService {
       logConnectionTestError(this.logger, 'Download client');
 
       if (error instanceof AxiosError && error.response?.status === 403) {
-        // Make this common, hard-to-diagnose case obvious in the logs.
-        this.logger.warn(DOWNLOAD_CLIENT_FORBIDDEN_MESSAGE);
-        this.logger.debug(error);
-        return {
-          status: 'NOK',
-          code: 0,
-          message: DOWNLOAD_CLIENT_FORBIDDEN_MESSAGE,
-        };
+        // For qBittorrent, 403 is a well-known IP-whitelist issue. Provide a
+        // targeted message. For other clients, fall through to the generic path.
+        if (!params.type || params.type === 'qbittorrent') {
+          this.logger.warn(QBITTORRENT_FORBIDDEN_MESSAGE);
+          this.logger.debug(error);
+          return {
+            status: 'NOK',
+            code: 0,
+            message: QBITTORRENT_FORBIDDEN_MESSAGE,
+          };
+        }
       }
 
       this.logger.debug(error);

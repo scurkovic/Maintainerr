@@ -1,4 +1,5 @@
 import {
+  DownloadClientType,
   MediaServerType,
   MetadataProviderPreference,
 } from '@maintainerr/contracts';
@@ -109,7 +110,14 @@ export class Settings implements SettingDto {
   @Column({ nullable: true })
   streamystats_url: string;
 
-  // Download client integration (currently qBittorrent)
+  // Download client integration
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    default: DownloadClientType.QBITTORRENT,
+  })
+  download_client_type: DownloadClientType;
+
   @Column({ nullable: true })
   download_client_url: string;
 

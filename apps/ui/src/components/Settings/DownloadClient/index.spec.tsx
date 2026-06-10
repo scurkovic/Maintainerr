@@ -16,6 +16,7 @@ const showError = vi.fn()
 const clearError = vi.fn()
 
 let downloadClientData: {
+  download_client_type: string
   download_client_url: string
   download_client_username: string
   download_client_password: string
@@ -63,6 +64,7 @@ describe('DownloadClientSettings', () => {
     showError.mockReset()
     clearError.mockReset()
     downloadClientData = {
+      download_client_type: 'qbittorrent',
       download_client_url: 'http://localhost:8080',
       download_client_username: 'admin',
       download_client_password: 'secret',
@@ -84,6 +86,7 @@ describe('DownloadClientSettings', () => {
 
     await waitFor(() => {
       expect(saveSettingsMock).toHaveBeenCalledWith({
+        download_client_type: 'qbittorrent',
         download_client_url: 'http://localhost:8080',
         download_client_username: 'admin',
         download_client_password: 'secret',
@@ -113,6 +116,7 @@ describe('DownloadClientSettings', () => {
 
   it('deletes the integration when the URL is cleared', async () => {
     downloadClientData = {
+      download_client_type: 'qbittorrent',
       download_client_url: '',
       download_client_username: '',
       download_client_password: '',
@@ -143,6 +147,7 @@ describe('DownloadClientSettings', () => {
     await waitFor(() => {
       expect(testMock).toHaveBeenCalledWith(
         expect.objectContaining({
+          download_client_type: 'qbittorrent',
           download_client_url: 'http://localhost:8080',
         }),
       )

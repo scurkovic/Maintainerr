@@ -1,17 +1,24 @@
 import z from 'zod'
 import { serviceUrlSchema } from '../serviceUrl'
 
+export enum DownloadClientType {
+  QBITTORRENT = 'qbittorrent',
+  TRANSMISSION = 'transmission',
+}
+
 /**
- * Connection + cleanup options for the download client Maintainerr talks to
- * (currently qBittorrent). Used to remove the completed download for media
- * that Radarr/Sonarr deletes.
+ * Connection + cleanup options for the download client Maintainerr talks to.
+ * Used to remove the completed download for media that Radarr/Sonarr deletes.
  */
 export const downloadClientSettingSchema = z.object({
+  download_client_type: z
+    .enum(DownloadClientType)
+    .optional()
+    .default(DownloadClientType.QBITTORRENT),
   download_client_url: serviceUrlSchema,
-  // Credentials are optional — a client may allow unauthenticated access
-  // (e.g. a localhost WebUI bypass). Not trimmed: the download client compares
-  // them verbatim, so trimming would silently corrupt a credential that has
-  // leading/trailing whitespace.
+  // Credentials are optional — a client may allow unauthenticated access.
+  // Not trimmed: the download client compares them verbatim, so trimming would
+  // silently corrupt a credential that has leading/trailing whitespace.
   download_client_username: z.string().optional().default(''),
   download_client_password: z.string().optional().default(''),
   // When true, removing a download also deletes its data on disk.

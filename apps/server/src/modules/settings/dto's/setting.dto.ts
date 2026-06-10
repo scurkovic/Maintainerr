@@ -1,4 +1,5 @@
 import {
+  DownloadClientType,
   MediaServerType,
   MetadataProviderPreference,
 } from '@maintainerr/contracts';
@@ -59,6 +60,8 @@ export class SettingDto {
   tautulli_api_key: string;
 
   streamystats_url: string;
+
+  download_client_type: DownloadClientType;
 
   download_client_url: string;
 

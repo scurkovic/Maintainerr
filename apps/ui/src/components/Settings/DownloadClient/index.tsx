@@ -1,6 +1,7 @@
 import {
   DownloadClientSetting,
   downloadClientSettingSchema,
+  DownloadClientType,
 } from '@maintainerr/contracts'
 import { useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
@@ -18,21 +19,23 @@ import DocsButton from '../../Common/DocsButton'
 import SaveButton from '../../Common/SaveButton'
 import TestingButton from '../../Common/TestingButton'
 import { InputGroup } from '../../Forms/Input'
+import { SelectGroup } from '../../Forms/Select'
 import SettingsAlertSlot from '../SettingsAlertSlot'
 import { useSettingsFeedback } from '../useSettingsFeedback'
 
 interface DownloadClientFormValues {
+  download_client_type: DownloadClientType
   download_client_url: string
   download_client_username: string
   download_client_password: string
   download_client_delete_data: boolean
-  // Fallback ratio used only when qBittorrent enforces no limit of its own.
   download_client_fallback_ratio: string
 }
 
 const FALLBACK_RATIO_DEFAULT = '0.5'
 
 const emptyValues: DownloadClientFormValues = {
+  download_client_type: DownloadClientType.QBITTORRENT,
   download_client_url: '',
   download_client_username: '',
   download_client_password: '',
@@ -40,11 +43,23 @@ const emptyValues: DownloadClientFormValues = {
   download_client_fallback_ratio: FALLBACK_RATIO_DEFAULT,
 }
 
-// qBittorrent is the only supported download client today, so this page shows
-// its connection fields directly. When a second client is added, introduce a
-// client-type selector and model the layout on the Metadata settings section
-// (src/components/Settings/Metadata) — a single selector plus the chosen
-// backend's fields is the clean reference for "pick one of several backends".
+const CLIENT_TYPE_OPTIONS = [
+  { value: DownloadClientType.QBITTORRENT, label: 'qBittorrent' },
+  { value: DownloadClientType.TRANSMISSION, label: 'Transmission' },
+]
+
+const URL_PLACEHOLDER: Record<DownloadClientType, string> = {
+  [DownloadClientType.QBITTORRENT]: 'http://localhost:8080',
+  [DownloadClientType.TRANSMISSION]: 'http://localhost:9091',
+}
+
+const FALLBACK_RATIO_HELP: Record<DownloadClientType, string> = {
+  [DownloadClientType.QBITTORRENT]:
+    "Whether a download has finished seeding is decided by qBittorrent's own ratio/seed-time limits. This ratio only applies to downloads qBittorrent isn't limiting, and can't be set below 0.5.",
+  [DownloadClientType.TRANSMISSION]:
+    "Whether a download has finished seeding is decided by Transmission's own ratio/idle limits (per-torrent or global). This ratio only applies when Transmission enforces no limit, and can't be set below 0.5.",
+}
+
 const DownloadClientSettings = () => {
   const [testResult, setTestResult] = useState<{
     status: boolean
@@ -68,6 +83,9 @@ const DownloadClientSettings = () => {
   // (deep-compared, so no effect / render loop).
   const formValues: DownloadClientFormValues | undefined = downloadClientData
     ? {
+        download_client_type:
+          downloadClientData.download_client_type ??
+          DownloadClientType.QBITTORRENT,
         download_client_url: downloadClientData.download_client_url ?? '',
         download_client_username:
           downloadClientData.download_client_username ?? '',
@@ -102,12 +120,13 @@ const DownloadClientSettings = () => {
     values: formValues,
   })
 
+  const clientType = useWatch({ control, name: 'download_client_type' })
   const url = useWatch({ control, name: 'download_client_url' })
   const username = useWatch({ control, name: 'download_client_username' })
   const password = useWatch({ control, name: 'download_client_password' })
 
   const isGoingToRemove = (url ?? '') === ''
-  const connectionKey = `${url} ${username} ${password}`
+  const connectionKey = `${clientType} ${url} ${username} ${password}`
   const enteredConnectionHasBeenTested =
     testedConnection === connectionKey && testResult?.status
   const canSave =
@@ -140,6 +159,7 @@ const DownloadClientSettings = () => {
     }
 
     const payload: DownloadClientSetting = {
+      download_client_type: values.download_client_type,
       download_client_url: values.download_client_url,
       download_client_username: values.download_client_username,
       download_client_password: values.download_client_password,
@@ -267,7 +287,7 @@ const DownloadClientSettings = () => {
             remove the completed download (and optionally its data) from your
             download client. The download is matched via the Radarr/Sonarr
             download history, so media removed without Radarr/Sonarr is left
-            untouched. qBittorrent is currently the only supported client.
+            untouched. Supported clients: qBittorrent and Transmission.
           </p>
         </div>
 
@@ -294,13 +314,38 @@ const DownloadClientSettings = () => {
         <div className="section">
           <form onSubmit={handleSubmit(onSubmit)}>
             <Controller
+              name="download_client_type"
+              control={control}
+              render={({ field }) => (
+                <SelectGroup
+                  label="Client"
+                  value={field.value}
+                  onChange={(event) => {
+                    clearTransientState()
+                    field.onChange(event)
+                  }}
+                  name={field.name}
+                >
+                  {CLIENT_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </SelectGroup>
+              )}
+            />
+
+            <Controller
               name="download_client_url"
               control={control}
               render={({ field }) => (
                 <InputGroup
                   label="URL"
                   value={field.value}
-                  placeholder="http://localhost:8080"
+                  placeholder={
+                    URL_PLACEHOLDER[clientType] ??
+                    URL_PLACEHOLDER[DownloadClientType.QBITTORRENT]
+                  }
                   onChange={(event) => {
                     clearTransientState()
                     field.onChange(event)
@@ -405,7 +450,10 @@ const DownloadClientSettings = () => {
                   step="0.1"
                   min="0.5"
                   error={errors.download_client_fallback_ratio?.message}
-                  helpText="Whether a download has finished seeding is decided by qBittorrent's own ratio/seed-time limits. This ratio only applies to downloads qBittorrent isn't limiting, and can't be set below 0.5."
+                  helpText={
+                    FALLBACK_RATIO_HELP[clientType] ??
+                    FALLBACK_RATIO_HELP[DownloadClientType.QBITTORRENT]
+                  }
                 />
               )}
             />

@@ -1,6 +1,7 @@
 import {
   BasicResponseDto,
   DownloadClientSetting,
+  DownloadClientType,
   EmbySetting,
   JellyfinSetting,
   MediaServerSwitchPreview,
@@ -60,7 +61,8 @@ export interface ISettings {
   tautulli_url: string
   tautulli_api_key: string
   streamystats_url?: string
-  // Download client integration (currently qBittorrent)
+  // Download client integration
+  download_client_type?: DownloadClientType
   download_client_url?: string
   download_client_username?: string
   download_client_password?: string

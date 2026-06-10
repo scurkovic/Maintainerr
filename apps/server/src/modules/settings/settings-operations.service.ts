@@ -325,6 +325,7 @@ export class SettingsOperationsService {
       // later reconfigure starts from defaults).
       await this.settingsDataService.saveSettings({
         ...settingsDb,
+        download_client_type: null,
         download_client_url: null,
         download_client_username: null,
         download_client_password: null,
@@ -351,6 +352,7 @@ export class SettingsOperationsService {
 
       await this.settingsDataService.saveSettings({
         ...settingsDb,
+        download_client_type: settings.download_client_type,
         download_client_url: settings.download_client_url,
         download_client_username: settings.download_client_username || null,
         download_client_password: settings.download_client_password || null,
@@ -1192,6 +1194,7 @@ export class SettingsOperationsService {
   ): Promise<BasicResponseDto> {
     if (setting) {
       return await this.downloadClient.testConnection({
+        type: setting.download_client_type,
         url: setting.download_client_url,
         username: setting.download_client_username,
         password: setting.download_client_password,
@@ -1207,6 +1210,7 @@ export class SettingsOperationsService {
     }
 
     return await this.downloadClient.testConnection({
+      type: this.settingsDataService.download_client_type,
       url: this.settingsDataService.download_client_url,
       username: this.settingsDataService.download_client_username,
       password: this.settingsDataService.download_client_password,

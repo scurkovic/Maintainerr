@@ -1,5 +1,8 @@
 import {
   BasicResponseDto,
+  DownloadClientSetting,
+  DownloadClientType,
+  downloadClientSettingSchema,
   EmbyLoginRequest,
   embyLoginRequestSchema,
   EmbySetting,
@@ -9,8 +12,6 @@ import {
   MediaServerSwitchPreview,
   MediaServerType,
   MetadataProviderPreference,
-  DownloadClientSetting,
-  downloadClientSettingSchema,
   MetadataProviderSetting,
   metadataProviderSettingSchema,
   RadarrSetting,
@@ -284,6 +285,8 @@ export class SettingsController {
     }
 
     return {
+      download_client_type:
+        settings.download_client_type ?? DownloadClientType.QBITTORRENT,
       download_client_url: settings.download_client_url ?? '',
       download_client_username: settings.download_client_username ?? '',
       download_client_password: settings.download_client_password ?? '',

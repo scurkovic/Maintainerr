@@ -1,5 +1,6 @@
 import {
   BasicResponseDto,
+  DownloadClientType,
   MaintainerrEvent,
   MediaServerType,
   MetadataProviderPreference,
@@ -101,6 +102,8 @@ export class SettingsDataService implements SettingDto {
 
   streamystats_url: string;
 
+  download_client_type: DownloadClientType;
+
   download_client_url: string;
 
   download_client_username: string;
@@ -165,6 +168,8 @@ export class SettingsDataService implements SettingDto {
       this.tautulli_url = settingsDb?.tautulli_url;
       this.tautulli_api_key = settingsDb?.tautulli_api_key;
       this.streamystats_url = settingsDb?.streamystats_url;
+      this.download_client_type =
+        settingsDb?.download_client_type ?? DownloadClientType.QBITTORRENT;
       this.download_client_url = settingsDb?.download_client_url;
       this.download_client_username = settingsDb?.download_client_username;
       this.download_client_password = settingsDb?.download_client_password;
